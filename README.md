@@ -1,239 +1,234 @@
-# 🐱 Cat-Dog-AI
+# Cat-Dog-AI
 
-**An AI-assisted Deep Learning project for classifying images of cats and dogs using Python and PyTorch.**
+A small image-classification project built with **Python and PyTorch**. It trains a custom Convolutional Neural Network (CNN) to distinguish between two classes: **cats** and **dogs**.
 
-Cat-Dog-AI is a beginner-friendly Computer Vision project that explores how Convolutional Neural Networks (CNNs) can be used to recognize and classify images into two categories: **Cats 🐱 and Dogs 🐶**.
+The repository currently contains the dataset-preparation script, CNN definition, and training loop. It is a training-focused learning project; a command-line image predictor or graphical application is not included yet.
 
-The project focuses on understanding the basic machine learning workflow, including dataset preparation, image preprocessing, CNN architecture, model training, and validation.
+## What the project does
 
-> **Project Status:** Initial implementation completed. Model training and evaluation are implemented, with prediction functionality planned for future development.
+The current workflow is:
 
----
+1. Read cat and dog images from the original dataset folders.
+2. Check that each image can be opened and verified.
+3. Select a fixed subset and copy it into training and validation folders.
+4. Resize images to `128 × 128` and convert them to PyTorch tensors.
+5. Train a custom CNN with the Adam optimizer and cross-entropy loss.
+6. Measure training and validation loss and accuracy after each epoch.
+7. Save the checkpoint whenever validation accuracy improves.
 
-## 📌 Project Overview
+## Dataset
 
-The primary objective of this project is to explore the fundamentals of Deep Learning and practical Computer Vision through an image classification problem.
+This project uses the [Microsoft Cats and Dogs dataset](https://www.microsoft.com/en-us/download/details.aspx?id=54765), distributed as the `kagglecatsanddogs_5340.zip` archive. The original dataset is **not included** in this repository. See [DATASET.md](DATASET.md) for the dataset note.
 
-The implementation follows a basic machine learning pipeline:
+The preparation script selects the following subset:
 
-- Dataset collection and preparation
-- Image validation and preprocessing
-- Image resizing and transformation
-- Custom CNN architecture development
-- Model training using PyTorch
-- Validation and model checkpoint saving
+| Class | Training images | Validation images | Total |
+|---|---:|---:|---:|
+| Cats | 1,000 | 500 | 1,500 |
+| Dogs | 1,000 | 500 | 1,500 |
+| **Total** | **2,000** | **1,000** | **3,000** |
 
-The project uses a custom CNN model named `CatDogCNN`, designed to distinguish between cat and dog images.
+Damaged or unreadable images are skipped. The split is shuffled with a fixed Python random seed (`42`), and selected files are copied rather than moved.
 
-## ✨ Key Features
+### Expected raw dataset layout
 
-- Custom Convolutional Neural Network (CNN).
-- Image classification architecture for two categories.
-- Dataset validation to exclude damaged or unreadable images.
-- Image preprocessing and resizing.
-- Training and validation workflow.
-- Model checkpoint saving.
-- PyTorch-based implementation.
+Download and extract the archive so the folders look like this:
 
-## 🧠 Model Architecture
+```text
+Cat-Dog-AI/
+└── raw_dataset/
+    └── PetImages/
+        ├── Cat/
+        │   ├── image1.jpg
+        │   └── ...
+        └── Dog/
+            ├── image1.jpg
+            └── ...
+```
 
-The project uses a custom CNN architecture implemented with PyTorch.
+The preparation script searches for files matching `*.jpg` (lowercase extension) in each class folder. It requires at least **1,500 valid JPG images per class**; otherwise, it stops with an error.
 
-**Architecture Overview**
+### Dataset preparation output
 
-| Layer | Configuration |
-|---|---|
-| Input | 128 × 128 RGB |
-| Convolution Block 1 | 3 → 32 channels |
-| Convolution Block 2 | 32 → 64 channels |
-| Convolution Block 3 | 64 → 64 channels |
-| Flatten | Feature transformation |
-| Fully Connected | 16,384 → 128 |
-| Dropout | 0.3 |
-| Output | 128 → 2 classes |
+Run the preparation script after placing the raw images in the expected folders:
 
-**Model Specifications**
+```bash
+python src/prepare_dataset.py
+```
 
-- Model: `CatDogCNN`
-- Input shape: `3 × 128 × 128`
-- Output classes: Cats and Dogs
-- Total parameters: 2,153,858
-- Loss Function: Cross Entropy Loss
-- Optimizer: Adam
-- Learning Rate: `0.001`
+It creates this directory structure:
 
-## 📂 Dataset
+```text
+dataset/
+├── train/
+│   ├── cats/
+│   └── dogs/
+└── validation/
+    ├── cats/
+    └── dogs/
+```
 
-This project uses the **Microsoft Cats and Dogs Dataset**.
+The `dataset/` and `raw_dataset/` directories are excluded from Git by `.gitignore`, so the image files remain on your machine and are not committed to the repository.
 
-Dataset source: [Microsoft Download Center](https://www.microsoft.com/en-us/download/details.aspx?id=54765)
+## Installation
 
-A subset of valid images is used for this implementation.
-
-| Category | Training | Validation |
-|---|---:|---:|
-| Cats | 1,000 | 500 |
-| Dogs | 1,000 | 500 |
-| **Total** | **2,000** | **1,000** |
-
-Damaged and unreadable images are excluded during dataset preparation.
-
-For more information about dataset preparation, see [DATASET.md](DATASET.md).
-
-*Note: Dataset images and the original ZIP archive are not included in this repository.*
-
-## 🛠️ Technology Stack
-
-| Technology | Purpose |
-|---|---|
-| Python | Core programming language |
-| PyTorch | Deep Learning framework |
-| TorchVision | Image transformations and dataset utilities |
-| NumPy | Numerical operations |
-| Pillow (PIL) | Image processing |
-| Matplotlib | Data visualization |
-| Scikit-learn | Machine learning utilities |
-| tqdm | Training progress visualization |
-
-## 🚀 Getting Started
-
-Follow these instructions to set up the project locally.
-
-### 1. Clone the Repository
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/kapil-goel952/Cat-Dog-AI.git
 cd Cat-Dog-AI
 ```
 
-### 2. Create a Virtual Environment
+### 2. Create and activate a virtual environment
 
 ```bash
 python -m venv .venv
 ```
 
-Activate the environment:
+Activate it using the command for your terminal:
 
-**Windows (PowerShell):**
+**Windows PowerShell**
 
 ```powershell
 .venv\Scripts\Activate.ps1
 ```
 
-**Linux / macOS:**
+**Windows Command Prompt**
+
+```bat
+.venv\Scripts\activate.bat
+```
+
+**Linux / macOS**
 
 ```bash
 source .venv/bin/activate
 ```
 
-### 3. Install Dependencies
+### 3. Install dependencies
 
 ```bash
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-For hardware-specific PyTorch installation, refer to the [official PyTorch installation guide](https://pytorch.org/get-started/locally/).
+The project uses PyTorch and TorchVision. For a platform-specific or GPU-specific PyTorch build, use the installation command recommended by the [official PyTorch installation selector](https://pytorch.org/get-started/locally/). The current training script explicitly selects the **CPU**, so it does not use a GPU even if one is available. The requirements file also lists NumPy, Matplotlib, and scikit-learn; the current three source scripts do not import those packages.
 
-### 4. Prepare the Dataset
+## Run the project
 
-Download the Microsoft Cats and Dogs dataset and arrange the original dataset in the following structure:
+### 1. Check the CNN model
 
-```text
-Cat-Dog-AI/
-│
-├── raw_dataset/
-│   └── PetImages/
-│       ├── Cat/
-│       └── Dog/
-│
-└── src/
-    └── prepare_dataset.py
+You can run the model file directly to perform a basic forward-pass test with a randomly generated input tensor:
+
+```bash
+python src/model.py
 ```
 
-Run the dataset preparation script:
+The script prints the input and output tensor shapes and the number of trainable model parameters.
+
+### 2. Prepare the dataset
+
+After downloading and extracting the dataset as described above, run:
 
 ```bash
 python src/prepare_dataset.py
 ```
 
-The script validates images and prepares the training and validation datasets.
-
-### 5. Train the Model
-
-Once the dataset is prepared, start training:
+### 3. Train the model
 
 ```bash
 python src/train.py
 ```
 
-Current training configuration:
-
-- Epochs: 5
-- Batch Size: 8
-- Optimizer: Adam
-- Loss: Cross Entropy Loss
-- Training Device: CPU
-
-The best validation checkpoint is saved at:
+The script loads the prepared folders, trains the CNN, and prints the training and validation metrics for every epoch. The best checkpoint is written to:
 
 ```text
 models/catdog_best.pth
 ```
 
-## 📁 Project Structure
+The checkpoint contains the model's `state_dict`, the `class_to_idx` mapping generated by TorchVision's `ImageFolder`, and the configured image size. The training script creates the `models/` directory when needed and writes or replaces this checkpoint when validation accuracy improves.
+
+## Model architecture
+
+The model is defined in [`src/model.py`](src/model.py) as `CatDogCNN`. It is a custom CNN built with PyTorch layers; it does not use a pre-trained network or transfer learning.
+
+**Input:** RGB image tensor with shape `3 × 128 × 128` (batch dimension is added by the data loader).
+
+| Stage | Layers | Output channels / features |
+|---|---|---:|
+| Convolution block 1 | `Conv2d → ReLU → MaxPool2d` | 32 |
+| Convolution block 2 | `Conv2d → ReLU → MaxPool2d` | 64 |
+| Convolution block 3 | `Conv2d → ReLU → MaxPool2d` | 64 |
+| Classifier | `Flatten → Linear → ReLU → Dropout(0.3) → Linear` | 128 → 2 |
+
+Each convolution uses a `3 × 3` kernel with padding `1`. Each max-pooling layer halves the image width and height, reducing the feature map from `128 × 128` to `16 × 16` before flattening. The final layer returns two class scores (logits).
+
+**Model details**
+
+- Input size: `128 × 128` RGB
+- Output classes: cats and dogs
+- Parameters: `2,153,858`
+- Loss function: `CrossEntropyLoss`
+- Optimizer: Adam
+- Learning rate: `0.001`
+- Dropout: `0.3`
+
+## Training configuration
+
+The current values are defined directly in [`src/train.py`](src/train.py):
+
+| Setting | Value |
+|---|---:|
+| Image size | `128 × 128` |
+| Batch size | `8` |
+| Epochs | `5` |
+| Learning rate | `0.001` |
+| Optimizer | Adam |
+| Loss | Cross-entropy |
+| Device | CPU |
+| PyTorch CPU threads | `4` |
+| Random horizontal flip | Training images only |
+
+Training images are resized, randomly flipped horizontally, and converted to tensors. Validation images are resized and converted to tensors without the random-flip augmentation. At the end of each epoch, the script calculates and prints training loss, training accuracy, validation loss, and validation accuracy. It saves a new checkpoint only when validation accuracy is higher than the previous best value.
+
+## Project structure
 
 ```text
 Cat-Dog-AI/
-│
-├── models/
-│   └── catdog_best.pth
-│
+├── models/                  # Checkpoint output directory
 ├── src/
-│   ├── model.py
-│   ├── prepare_dataset.py
-│   └── train.py
-│
+│   ├── model.py             # CatDogCNN architecture and forward-pass test
+│   ├── prepare_dataset.py   # Image validation, selection, split and copying
+│   └── train.py             # Data loading, training, validation and checkpointing
+├── raw_dataset/             # Downloaded source images (not committed)
+├── dataset/                 # Prepared train/validation images (not committed)
+├── DATASET.md               # Dataset source and subset information
+├── requirements.txt         # Python dependencies
 ├── .gitignore
-├── DATASET.md
-├── README.md
-└── requirements.txt
+└── README.md
 ```
 
-## 🤖 AI-Assisted Development
+## Current scope and limitations
 
-This project was developed using an **AI-assisted coding approach, commonly known as vibe coding**.
+- **Training is CPU-only:** `src/train.py` sets the device to `cpu` directly; it does not automatically select CUDA.
+- **JPG input:** `src/prepare_dataset.py` searches for lowercase `*.jpg` files. Other extensions such as `.jpeg` or uppercase `.JPG` are not selected by the current script.
+- **Fixed configuration:** image size, batch size, epoch count, and learning rate are set in the source file rather than exposed as command-line options.
+- **No prediction interface yet:** the repository does not currently include a script for classifying a new image, a web app, or a desktop GUI.
+- **No saved evaluation report yet:** the training script prints loss and accuracy, but does not generate plots, a confusion matrix, precision/recall scores, or a separate test-set evaluation.
+- **No accuracy claim:** results depend on the training run. Run the script yourself to obtain the validation metrics for your environment; no benchmark score is stated here.
 
-AI tools were used throughout the development process to assist with code generation, implementation ideas, debugging, understanding technical concepts, and improving the overall development workflow.
+## Possible next steps
 
-The project direction, objectives, development decisions, execution, and experimentation were guided by me, with AI serving as a development assistant.
+- Add a prediction script that loads `models/catdog_best.pth` and classifies a user-provided image.
+- Add a separate test set and report precision, recall, F1-score, and a confusion matrix.
+- Plot training and validation loss/accuracy over the epochs.
+- Make the training device and hyperparameters configurable.
+- Add a simple interface for uploading and classifying images.
 
-I believe AI-assisted development is an opportunity to experiment with ideas, explore unfamiliar technologies, and learn through practical implementation.
+## AI-assisted development
 
-**Transparency Note:** Parts of the codebase were generated or refined with AI assistance. This project is shared as a learning and experimentation project, rather than a claim of entirely independent, manually written implementation.
-
-## 🔮 Future Improvements
-
-There is still plenty of room to improve and extend this project.
-
-Planned improvements include:
-
-- [ ] Implement an image prediction script.
-- [ ] Display prediction confidence scores.
-- [ ] Add training and validation accuracy graphs.
-- [ ] Generate a confusion matrix.
-- [ ] Experiment with data augmentation.
-- [ ] Improve model classification performance.
-- [ ] Build a simple image classification interface.
-- [ ] Explore transfer learning with pretrained models.
-
-## 🎯 Project Goal
-
-The goal of Cat-Dog-AI is to gain practical exposure to Deep Learning, Computer Vision, CNN architectures, and the machine learning development workflow.
-
-It is also an experiment in AI-assisted software development and learning by building.
+This is an AI-assisted learning project. AI tools were used during development for code generation, explanations, and troubleshooting. The project is intended to document hands-on exploration of dataset preparation, CNNs, and a basic PyTorch training workflow; it is not a claim that every line of code was independently authored.
 
 ---
 
-**Built with Python, PyTorch, curiosity, and AI assistance. 🐾**
-
-[GitHub Repository](https://github.com/kapil-goel952/Cat-Dog-AI)
+Built as a learning project with Python and PyTorch. 🐾
