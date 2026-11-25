@@ -163,15 +163,6 @@ The model is defined in [`src/model.py`](src/model.py) as `CatDogCNN`. It is a c
 
 Each convolution uses a `3 × 3` kernel with padding `1`. Each max-pooling layer halves the image width and height, reducing the feature map from `128 × 128` to `16 × 16` before flattening. The final layer returns two class scores (logits).
 
-**Model details**
-
-- Input size: `128 × 128` RGB
-- Output classes: cats and dogs
-- Parameters: `2,153,858`
-- Loss function: `CrossEntropyLoss`
-- Optimizer: Adam
-- Learning rate: `0.001`
-- Dropout: `0.3`
 
 ## Training configuration
 
