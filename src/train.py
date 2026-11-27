@@ -5,15 +5,14 @@ import torch.optim as optim
 
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
+
 from pathlib import Path
 from tqdm import tqdm
 
 from model import CatDogCNN
 
 
-# -------------------------------
 # Configuration
-# -------------------------------
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -23,10 +22,12 @@ MODEL_DIR = BASE_DIR / "models"
 
 MODEL_DIR.mkdir(parents=True, exist_ok=True)
 
-IMAGE_SIZE = 128
+IMAGE_SIZE = 224
 BATCH_SIZE = 8
-EPOCHS = 5
-LEARNING_RATE = 0.001
+EPOCHS = 12
+
+MEAN = [0.485, 0.456, 0.406]
+STD = [0.229, 0.224, 0.225]
 
 torch.manual_seed(42)
 torch.set_num_threads(4)
@@ -36,25 +37,29 @@ device = torch.device("cpu")
 print("Training device:", device)
 
 
-# -------------------------------
 # Image transformations
-# -------------------------------
 
 train_transform = transforms.Compose([
     transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
     transforms.RandomHorizontalFlip(),
-    transforms.ToTensor()
+    transforms.RandomRotation(10),
+    transforms.ColorJitter(
+        brightness=0.15,
+        contrast=0.15,
+        saturation=0.15
+    ),
+    transforms.ToTensor(),
+    transforms.Normalize(MEAN, STD)
 ])
 
 val_transform = transforms.Compose([
     transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
-    transforms.ToTensor()
+    transforms.ToTensor(),
+    transforms.Normalize(MEAN, STD)
 ])
 
 
-# -------------------------------
 # Load datasets
-# -------------------------------
 
 train_dataset = datasets.ImageFolder(
     TRAIN_DIR,
@@ -65,6 +70,16 @@ val_dataset = datasets.ImageFolder(
     VAL_DIR,
     transform=val_transform
 )
+
+if train_dataset.class_to_idx != val_dataset.class_to_idx:
+    raise ValueError("Training and validation class mappings differ!")
+
+if len(train_dataset) == 0 or len(val_dataset) == 0:
+    raise ValueError("Training or validation dataset is empty!")
+
+print("\nClasses:", train_dataset.class_to_idx)
+print("Training images:", len(train_dataset))
+print("Validation images:", len(val_dataset))
 
 train_loader = DataLoader(
     train_dataset,
@@ -80,35 +95,38 @@ val_loader = DataLoader(
     num_workers=0
 )
 
-print("\nClasses:", train_dataset.classes)
-print("Training images:", len(train_dataset))
-print("Validation images:", len(val_dataset))
 
+# Create pretrained model
 
-# -------------------------------
-# Create model
-# -------------------------------
-
-model = CatDogCNN().to(device)
+model = CatDogCNN(pretrained=True).to(device)
 
 criterion = nn.CrossEntropyLoss()
 
-optimizer = optim.Adam(
-    model.parameters(),
-    lr=LEARNING_RATE
-)
+optimizer = optim.Adam([
+    {
+        "params": model.backbone.layer4.parameters(),
+        "lr": 0.0001
+    },
+    {
+        "params": model.backbone.fc.parameters(),
+        "lr": 0.001
+    }
+], weight_decay=0.0001)
 
 
-# -------------------------------
-# Training and validation
-# -------------------------------
+# Training loop
 
 best_accuracy = 0.0
 
 for epoch in range(EPOCHS):
 
-    # Training phase
     model.train()
+
+    # Keep earlier frozen BatchNorm layers in evaluation mode.
+    model.backbone.bn1.eval()
+    model.backbone.layer1.eval()
+    model.backbone.layer2.eval()
+    model.backbone.layer3.eval()
 
     running_loss = 0.0
     correct = 0
@@ -131,7 +149,6 @@ for epoch in range(EPOCHS):
         loss = criterion(outputs, labels)
 
         loss.backward()
-
         optimizer.step()
 
         running_loss += loss.item() * images.size(0)
@@ -146,7 +163,9 @@ for epoch in range(EPOCHS):
     train_loss = running_loss / total
     train_accuracy = 100 * correct / total
 
-    # Validation phase
+
+    # Validation
+
     model.eval()
 
     val_correct = 0
@@ -172,6 +191,8 @@ for epoch in range(EPOCHS):
             val_correct += (predictions == labels).sum().item()
 
     val_loss = val_loss_total / val_total
+
+    # Important: calculate validation accuracy.
     val_accuracy = 100 * val_correct / val_total
 
     print(f"\nEpoch: {epoch + 1}/{EPOCHS}")
@@ -180,7 +201,8 @@ for epoch in range(EPOCHS):
     print(f"Validation Loss: {val_loss:.4f}")
     print(f"Validation Accuracy: {val_accuracy:.2f}%")
 
-    # Save the best model
+
+    # Save the best model separately.
     if val_accuracy > best_accuracy:
 
         best_accuracy = val_accuracy
@@ -188,10 +210,13 @@ for epoch in range(EPOCHS):
         torch.save({
             "model_state_dict": model.state_dict(),
             "class_to_idx": train_dataset.class_to_idx,
-            "image_size": IMAGE_SIZE
-        }, MODEL_DIR / "catdog_best.pth")
+            "image_size": IMAGE_SIZE,
+            "mean": MEAN,
+            "std": STD
+        }, MODEL_DIR / "catdog_resnet18_best.pth")
 
         print("Best model saved!")
+
 
 print("\nTraining completed!")
 print(f"Best validation accuracy: {best_accuracy:.2f}%")
