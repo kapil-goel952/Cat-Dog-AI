@@ -1,57 +1,32 @@
 
-import torch
 import torch.nn as nn
+from torchvision.models import resnet18, ResNet18_Weights
 
 
 class CatDogCNN(nn.Module):
 
-    def __init__(self):
+    def __init__(self, pretrained=False):
         super().__init__()
 
-        # Feature extraction layers
-        self.features = nn.Sequential(
+        weights = ResNet18_Weights.DEFAULT if pretrained else None
 
-            # First convolution block
-            nn.Conv2d(3, 32, kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2),
+        self.backbone = resnet18(weights=weights)
 
-            # Second convolution block
-            nn.Conv2d(32, 64, kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2),
+        # Freeze the pretrained layers initially.
+        for parameter in self.backbone.parameters():
+            parameter.requires_grad = False
 
-            # Third convolution block
-            nn.Conv2d(64, 64, kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2)
-        )
+        # Allow the last feature-extraction block to learn.
+        for parameter in self.backbone.layer4.parameters():
+            parameter.requires_grad = True
 
-        # Classification layers
-        self.classifier = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(64 * 16 * 16, 128),
-            nn.ReLU(),
+        # Replace the original classifier with our two classes.
+        input_features = self.backbone.fc.in_features
+
+        self.backbone.fc = nn.Sequential(
             nn.Dropout(0.3),
-            nn.Linear(128, 2)
+            nn.Linear(input_features, 2)
         )
 
     def forward(self, x):
-        x = self.features(x)
-        x = self.classifier(x)
-        return x
-
-
-if __name__ == "__main__":
-
-    model = CatDogCNN()
-
-    # Test using one sample image
-    sample = torch.randn(1, 3, 128, 128)
-
-    output = model(sample)
-
-    print("Model created successfully!")
-    print("Input shape:", sample.shape)
-    print("Output shape:", output.shape)
-    print("Total parameters:", sum(p.numel() for p in model.parameters()))
+        return self.backbone(x)
